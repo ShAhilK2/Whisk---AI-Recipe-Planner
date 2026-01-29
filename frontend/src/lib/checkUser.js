@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -7,6 +7,7 @@ export const checkUser = async () => {
 
 
     const user = await currentUser();
+    const {has} = await auth();
     console.log("Clerk User", user);
 
     if (!user) {
@@ -18,13 +19,14 @@ export const checkUser = async () => {
         return null;
     }
 
+
 // Todo : Pricing Logic
-    const subscriptionTier = "free";
+    const subscriptionTier = has({plan : "pro"}) ? "pro" : "free";
 
     try{
-
         const existingUserResponse = await fetch(`${STRAPI_URL}/api/users?filters[clerkId][$eq]=${user.id}`,{
             headers: {
+                    "Content-Type": "application/json" ,
                 Authorization: `Bearer ${STRAPI_API_TOKEN}`,
             },
             cache : "no-store"
@@ -37,7 +39,6 @@ export const checkUser = async () => {
         }
 
         const existingUserData = await  existingUserResponse.json();
-
         if(existingUserData.length > 0){
             const existingUser = existingUserData[0];
             if(existingUser.subscriptionTier !== subscriptionTier){
@@ -56,10 +57,7 @@ export const checkUser = async () => {
 
             return {...existingUser ,subscriptionTier}
         }
-
-
         // if there is no existing user, then we have to create a new user  in strapi
-
 
         // Get Authenticated Role
         const rolesResponse = await fetch(`${STRAPI_URL}/api/users-permissions/roles`,{
@@ -113,6 +111,7 @@ export const checkUser = async () => {
         console.log("Error Creating User ", errorText);
         return null;
     }
+
 
     const newUser = await newUserResponse.json();
     return newUser;
