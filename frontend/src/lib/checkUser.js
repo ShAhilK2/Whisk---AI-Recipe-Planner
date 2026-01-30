@@ -27,7 +27,7 @@ export const checkUser = async () => {
         const existingUserResponse = await fetch(`${STRAPI_URL}/api/users?filters[clerkId][$eq]=${user.id}`,{
             headers: {
                     "Content-Type": "application/json" ,
-                Authorization: `Bearer ${STRAPI_API_TOKEN}`,
+                    Authorization: `Bearer ${STRAPI_API_TOKEN}`,
             },
             cache : "no-store"
         });
